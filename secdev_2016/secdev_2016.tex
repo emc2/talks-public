@@ -1,0 +1,112 @@
+\documentclass{beamer}
+\usepackage{MnSymbol}
+
+\title{Combining Formal Methods and Industrial Pragmatics}
+\author{Eric L. McCorkle}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Dependent Types (very briefly)}
+  Dependently-typed languages are equipped with very powerful type systems
+  \begin{itemize}
+    \item Type systems are strong enough to express full specifications
+    \item Type-checking amounts to proving implementations behave
+      according to spec
+    \item Must still get the specification right!  (Who watches the
+      watchers?)
+    \item Proofs resemble code, must be developed and maintained like code
+    \item Powerful tool for building security in!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{``Industrial'' Programming Languages}
+  What makes a language successful in the ``Real World''?
+  \begin{itemize}
+    \item Realities: very large codebases, code evolution, staff
+      turnover, differing skill-levels, cost/benefit tradeoffs,
+      compatibility, etc.
+    \item Resist bit-rot, withstand inelegance, hold up under refactoring
+    \item ``Harm-reduction'' often works better than ``thou shalt''
+  \end{itemize}
+  What tends to work well?
+  \begin{itemize}
+    \item Optimize for least eventual cost (or pain)
+    \item Modularization, encourage good practices, code reuse
+    \item Present complex ideas in an accessible fashion
+    \item API/library design is an art-form to be celebrated
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Vision of ``Industrial'' Dependently-Typed Languages}
+  How can we make depndent types and verification suitable for
+  industrial programming?
+\end{frame}
+
+\begin{frame}
+  \frametitle{Gradual Proof Checking (and Typing)}
+  \begin{itemize}
+    \item Making people prove their entire program correct before running
+      it is a non-starter for industry
+    \item People develop software iteratively
+    \item Cost/benefit tradeoffs, risk profiles, ROI differ over components
+    \item ``Two-phase'' type/proof-checking: first phase is decidable,
+      second phase does verification.
+    \item Prove critical components correct, rely on testing for the
+      rest, gradually work your way outward
+    \item Provides a smooth transition from prototypes to verified
+      systems
+    \item Go a step further: do this with type checking in general
+      (gradual typing)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Managing Large Verified Codebases}
+  How would we manage large bodies of proofs about code?
+  \begin{itemize}
+    \item Proofs very closely resemble code
+    \item Provide ability to automate proofs using the same language
+      as the code
+    \item Apply known techniques that work for code management:
+      modularization, small units of functionality, API design
+    \item Draw on historically successful language concepts (OO
+      features, typeclasses, etc) to design constructs for managing
+      verification
+    \item Draw on (and perhaps refactor) parts of mathematics,
+      particularly abstract algebra
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{A Vision of Industrial Dependent-Typed Languages}
+  \begin{itemize}
+    \item View as a specification/reasoning system built into the language
+    \item Proof obligations provided as an artifact of compilation,
+      usable to other tools)
+    \item Gradual ``pay-as-you-go'' typing and proof-checking
+    \item Start with no spec, leave proof obligations unproven
+    \item Develop spec iteratively, prove obligations where advantageous
+    \item Proofs look like code, make use of traditional software
+      engineering techniques
+    \item A fully-mature module has specs, proofs, and facilities for
+      automating proofs about the module
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{itemize}
+    \item Happy to discuss these ideas in greater detail
+    \item I am actively working on a language to implement these ideas
+    \item Particularly interested in how to improve infosec through
+      better languages
+    \item Email me (eric@metricspace.net) or come find me to talk more
+  \end{itemize}
+\end{frame}
+
+\end{document}
