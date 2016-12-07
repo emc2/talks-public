@@ -1,0 +1,382 @@
+\documentclass{beamer}
+\usepackage{MnSymbol}
+
+\title{Intro to Denotational Semantics}
+\author{Eric L. McCorkle}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Semantics}
+  Semantics seeks to define meaning of a programming language.
+  \begin{itemize}
+    \item Informal prose is a bad representation: mathematics provides
+      better tools.
+    \item Two main methods: \emph{Operational} and \emph{Denotational}.
+    \item We will focus on denotational methods here.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Operational Methods, Briefly}
+  Operational methods focus on \emph{term rewriting systems}.
+  \begin{itemize}
+    \item Rewrite rules of the form $\operatorname{term} \rightarrow
+      \operatorname{term}$
+    \item Example: $\operatorname{\tt if}\;\operatorname{\tt
+      true}\;t_t\;\operatorname{\tt else}\;t_f \rightarrow t_t$
+    \item Many variations: small-step, big-step, contextual, etc.
+    \item Type systems need safety proofs (all well-typed terms can
+      execute, execution of well-typed terms yields well-typed terms).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Denotational Methods}
+  \emph{Denotational} methods define the meaning of a language by
+  mapping each term to a mathematical object.
+  \begin{itemize}
+    \item Denotational methods can directly describe infinite and
+      infinite-rank objects without much trouble
+    \item Multiple ``dimensions'' of induction are much easier to accomplish
+    \item Easier to analyze the language mathematically
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Denotational Methods: Approaches}
+  General approach:
+  \begin{itemize}
+    \item Define a structured space, or \emph{domain} which contains
+      all possible values in the language.
+    \item Model datatype constructors using \emph{constructions} on
+      spaces (ex. cartesian products, disjoint unions, function
+      spaces)
+    \item Handle recursion, infinite/infinite-rank objects with
+      \emph{limits}.
+  \end{itemize}
+  Two main foundations:
+  \begin{itemize}
+    \item Complete partial orders (domain theory)
+    \item Metric spaces
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Domain Theory (Scott-Strachey Semantics)}
+  Scott-Strachey semantics, also known as \emph{domain theory} was the
+  first approach to denotational semantics.
+  \begin{itemize}
+    \item Spaces of values form directed-complete partial orders
+    \item Order is an order of ``definiteness''
+    \item Refinement of definitions is a continuous monotone function
+    \item Infinite objects are fixed-points of refinement
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Partial Orders}
+  A \emph{partial order} is essentially a total order where some
+  elements cannot be compared.
+
+  We write the order relation as $\sqsubseteq$ instead of $\leq$.  It
+  has the following properties:
+  \begin{itemize}
+    \item $x \sqsubseteq x$
+    \item if $x \sqsubseteq y$ and $y \sqsubseteq z$ then $x \sqsubset z$
+    \item if $x \sqsubseteq y$ and $y \sqsubseteq x$ then $x = y$
+  \end{itemize}
+  The strict form $\sqsubset$ is often called ``below''.  Sometimes
+  $\sqsubseteq$ is misleadingly called ``below''.  Some authors use
+  $\sqsubset$ and $\sqsubsetneq$.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Meets and Joins}
+  \begin{itemize}
+    \item The \emph{join} (or \emph{least upper bound}, or
+      \emph{supremum}) $\bigsqcup_ia_i$ of elements $a_i$ is an
+      element $a$ such that $a_i \sqsubseteq a$ for all $i$ and there
+      is no $a' \sqsubset a$ with this property.
+    \item The \emph{meet} (or \emph{greatest lower bound}, or
+      \emph{infimum}) $\bigsqcap_ia_i$ of elements $a_i$ is an element
+      $a$ such that $a \sqsubseteq a_i$ for all $i$ and there is no $a
+      \sqsubset a'$ with this property.
+    \item A \emph{join semilattice} is a partial order in which every
+      two elements have a join.
+      \item A \emph{meet semilattice} is a partial order in which
+        every two elements have a meet.
+      \item A \emph{directed subset} of a partial order is a subset
+        that is a join-semilattice.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Chains, Continuity, and Fixed-Points}
+  \begin{itemize}
+    \item A \emph{chain} is a sequence of elements $a_i$ such that
+      $a_1 \sqsubseteq a_2 \sqsubseteq \ldots$.
+    \item A \emph{monotone} function $f$ has the property that $a
+      \sqsubseteq f(a)$ (note that monotone functions define a chain.
+    \item A \emph{(Scott-)continuous} function $f$ has the property
+      that $f(\bigsqcup_ia_i) = \bigsqcup_if(a_i)$
+    \item A \emph{fixed point} of a function $f$ is a point $a$ such
+      that $f(a) = a$
+    \item A \emph{chain-complete} partial order (CCPO) is a partial
+      order in which all $\omega$-chains have a join.
+    \item A \emph{directed-complete} partial order (DCPO) is a
+      partial order in which all directed subsets have a join.
+  \end{itemize}
+  An important result is that CCPO and DCPO are equivalent.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Order of Definiteness}
+  Domain theory is based on DCPO's, where the order relation describes
+  an \emph{order of definiteness} or \emph{order of approximation}.
+  \begin{itemize}
+    \item $\bot$ represents an ``indeterminate'' value.
+    \item Non-terminating computations are represented by $\bot$.
+    \item If $a \subseteq b$, then $a$ is ``less definite'' than $b$.
+    \item Example: a function $f(x) = \{ 1 \mapsto 1, 2 \mapsto 2 \}$ is
+      more definite than $f'(x) = \{ 1 \mapsto 1 \}$, thus $f' \sqsubset f$.
+    \item Continuous monotone function ``refine'' terms by adding more
+      definition.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example: Factorial}
+  The factorial function is a good example.  We start with a base definition:
+  \[!_0 = \{ 0 \mapsto 1, 1 \mapsto \bot, \ldots \}\]
+  We get a progressively more defined version by ``unfolding'':
+  \[!_1 = \{ 0 \mapsto 1, 1 \mapsto 1, 2 \mapsto \bot, \ldots \} \sqsubset\]
+  \[!_2 = \{ 0 \mapsto 1, 1 \mapsto 1, 2 \mapsto 2, 3 \mapsto \bot, \ldots \} \sqsubset\]
+  \[!_3 = \{ 0 \mapsto 1, 1 \mapsto 1, 2 \mapsto 2, 3 \mapsto 6, 4 \mapsto \bot, \ldots \} \]
+  and so on.  The upper-bound of this chain is $!$.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Constructions}
+  We represent datatype constructors using \emph{constructions} on
+  DCPO's.  Each of these is again a DCPO:
+  \begin{itemize}
+    \item \emph{Cartesian products} $A\times B$ and \emph{smash
+      products} $A\otimes B$ represent lazy and strict tuples.
+    \item \emph{Continuous function spaces} $[A\rightarrow B]$ and
+      \emph{strict} function spaces $[A\rightarrow_{!}B]$ represent
+      lazy and strict functions.
+    \item \emph{Disjoint} or \emph{labeled} unions $A \cup B$ (often
+      $A \oplus B$) ``glue'' spaces together.
+    \item The \emph{pointed} construction $A_{\bot}$ adds a $\bot$
+      element.
+  \end{itemize}
+  We can build all the ``classic'' compound datatypes using these
+  constructions.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Embedding/Projections and Retracts}
+
+  In general, for some construction on DCPO's $F(A_1, A_2, \ldots)$,
+  where $A$, $B$ are DCPO's, we have pairs of functions $(e_i, p_i)$
+  called \emph{embedding/projection pairs} with the following
+  properties:
+  \begin{itemize}
+    \item $e_i$ (called the \emph{embedding}) maps each $a\in A_i$ to
+      a unique element of $F(A_1, A_2, \ldots)$ (injective)
+    \item $p_i$ (called the \emph{projection}) maps a unique $a \in
+      F(A_1, A_2, \ldots)$ to each element of $A_i$ (surjective)
+    \item $e_i$ and $p_i$ are inverses in $A_i$ ($p_i\circ e_i =
+      \operatorname{id}_{A_i}$), but not necessarily in $F(A_1, A_2,
+      \ldots)$
+  \end{itemize}
+  Some space $A$ is a \emph{retract} of $B$ if there is an
+  embedding/projection pair that preserves the order properties.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Facts about Embedding/Projections and Retracts}
+  The following are true of embedding/projection pairs and retracts:
+  \begin{itemize}
+    \item Embedding/projection pairs compose nicely.  If $(e_1, p_1)$
+      goes from $A$ to $B$ and $(e_2, p_2)$ goes from $B$ to $C$ are,
+      $(e_2\circ e_1, p_1\circ p_2)$ goes from $A$ to $C$.
+    \item Retracts are transitive.  If $A$ is a retract of $B$ and $B$
+      is a retract of $C$, then $A$ is also a retract of $C$ (get the
+      embedding/projection pair as desrcibed above).
+    \item A space can be a rectract of itself, in which case the
+      embedding/porjection pair is a true isomorphism.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Recursive Domain Equations}
+  Domains with only finite objects can be built using methods
+  developed so far.  Domains with \emph{infinite} objects
+  (infinite-rank types, higher-order functions, etc) can be
+  characterized with recursive domain equations.
+
+  For example, the following recursive domain equation characterizes
+  $\lambda$-calculus:
+  \[D \cong [D\rightarrow D]\]
+  A more general construction might look like this:
+  \[D \cong D_0 \cup (D \times D) \cup [D \rightarrow D]\]
+  where $D_0$ is a \emph{basis set} consisting of primitive objects.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Fixed-Point Spaces}
+  For some recursive domain equation $D \cong F(D)$, the solution is a
+  \emph{limit space}.
+  \begin{itemize}
+    \item If $D$ is a retract of $F(D)$, then we can characterize
+      $D$ as the space of fixed points of the map defined by the
+      embedding/projection pairs.
+
+    \item The Knaster-Tarski fixed-point theorem proves that the space of
+      fixed points of a function $f$ on a DCPO is a DCPO.  However, this
+      isn't enough for us.
+
+    \item We have a sequence of spaces $D_0 \subset D_1 \subset D_2 \subset
+      \ldots$, where $D_n = F^n(D_0)$.  We want the limit $D_{\omega}$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Scott's Inverse Limit Theorem}
+  Scott's \emph{inverse limit theorem} generalizes Knaster-Tarski and
+  completes the construction.
+  \begin{itemize}
+    \item We know that each $D_i$ is a retract of $D_{i+1}$, and
+      therefore $D_{i+k}$.
+    \item For all $i < j$, we therefore have $e_{i,j} = e_j\circ
+      e_{j-1} \circ \ldots e_i$ and $p_{i,j} = p_i \circ p_{i+1} \circ
+      \ldots \circ p_j$
+    \item We define $e_{i,\omega} = \lim_{j\rightarrow\omega}e_{i,j}$,
+      but this only maps elements of $D_0$ to non-$\bot$ values.
+    \item We can define $p_{i,\omega} =
+      \lim_{j\rightarrow\omega}p_{i,j}$, which gives us $D_i =
+      p_{i,\omega}(D_{\omega})$, where $D_{\omega}$ is the
+      \emph{inverse} limit.
+  \end{itemize}
+  Scott's inverse limit theorem shows that the inverse limit
+  $D_{\omega}$ exists, is unique, and is also the direct limit.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Categorical Constructions}
+  Over time, domain theory has absorbed more and more category theory.
+  Generalized constructions based on categories have replaced the
+  original topological tools.
+
+  The key difficulty in applying category theory is contravariant
+  functors.  Two approaches deal with this.
+
+  Smyth and Plotkin use retracts as the arrows, which gets back to
+  covariance.
+
+  Freyd splits the covariant and contravariant parts and uses a
+  construction similar to the implementation of full logic using
+  monotone operators.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Metric Space Semantics}
+  Metric space semantics is a more modern approach, based on metric
+  spaces.  It is similar in structure, and has some advantages over
+  Scott-domains:
+  \begin{itemize}
+    \item No inverse limit theorem, uses Banach's Fixed Point Theorem.
+    \item Closer conceptually to analysis.
+    \item Tends to work better for formulating memories, separation logic.
+  \end{itemize}
+  However, it also has some disadvantages:
+  \begin{itemize}
+    \item Can't handle non-metrizable spaces.
+    \item Can be harder to visualize and explain.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Metric Spaces}
+  A \emph{metric space} is a set equipped with a distance function $d$
+  with the following properties:
+  \begin{itemize}
+    \item $d(x, x) = 0$, $d(x, y) > 0$ if $x \neq y$
+    \item $d(x, y) = d(y, x)$
+    \item $d(x, z) \leq d(x, y) + d(y, z)$
+  \end{itemize}
+  The following are basic definitions in metric spaces:
+  \begin{itemize}
+    \item An \emph{$\epsilon$-ball} around a point $x$ is the set of
+      all points of distance at most $\epsilon$ from $x$.
+    \item A function $f$ is \emph{continuous} if for any
+      $\epsilon$-ball $Y$ around $f(x)$, there exists a $\delta$-ball
+      $X$ around $x$ such that $Y = f(X)$.
+    \item A \emph{limit} of a sequence $x_1, x_2,\ldots$ is a point
+      $x$ such that for any $\epsilon$, there exists some $k$ such
+      that for all $i > k$, $d(x, x_i) < \epsilon$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Metric Space Semantics}
+  In metric space semantics, we represent incomplete terms as an
+  $\epsilon$-ball containing all the possible values the term might
+  take.
+  \begin{itemize}
+    \item Refining the term shrinks the ball more and more, until it
+      shrinks down to a single point.
+    \item The analog of $\bot$ is the set containing the entire space.
+  \end{itemize}
+  We also have a theorem strong enough to build limit spaces:
+  \begin{itemize}
+    \item A given map $F$ from $A$ to $B$ is \emph{contractive} if
+      $d(F(x), F(y)) < d(x, y)$
+    \item Banach's Fixed Point Theorem says any \emph{contractive} map has
+      a unique fixed point.
+    \item Thus, we need to show that our constructions give rise to
+      contractive maps.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Ultrametric Spaces and Contraction Maps}
+  \emph{Ultra}metric spaces\footnote{Actually, complete, 1-bounded,
+    non-empty ultrametric spaces.} are a special kind of metric space
+  in which all the usual constructions behave nicely.
+  \begin{itemize}
+    \item In an ultrametric space, we replace the triangle inequality
+      with $d(x, z) \leq \max[d(x, y), d(y, z)]$
+    \item Cartesian products, continuous functions, et. al. are
+      \emph{nonexpansive} maps ($d(F(x), F(y)) \leq d(x, y)$).
+    \item There is a well-behaved map $\frac{1}{2}$, which halfs all
+      the distances (more generally, multiplies all distances by any
+      $k > 0$).
+    \item The map $\frac{1}{2}$ turns any non-expansive map into a
+      contractive map.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Takeaways}
+  \begin{itemize}
+    \item Scott's characterization of semi-definite terms as a partial
+      order is a very powerful abstraction.
+    \item Used in many other areas: abstract interpretation,
+      propagators, others.
+    \item Non-monotone, discontinuous phenomena can be characterized
+      using monotone continuous functions.
+    \item This forms an elegant, effective foundation for approaches
+      to many hard problems.
+    \item There are deep connections between computational theory and
+      higher mathematics.
+  \end{itemize}
+  Final takeaway: denotational semantics is intimidating at first, but
+  actually not that bad if you know where it's leading.
+\end{frame}
+
+\end{document}
