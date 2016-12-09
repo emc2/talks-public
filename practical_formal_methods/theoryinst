@@ -1,0 +1,9 @@
+instance Map (Term k) (Term v) (MyMap k v) where
+  toModel (Call (Sym "put") [m, k, v]) =
+    toModel m ++ [Add k v]
+  toModel (Call (Sym "delete") [m, k]) =
+    toModel m ++ [Del k]
+  toModel t = placeholder t
+
+  -- Proofs of laws
+  ...

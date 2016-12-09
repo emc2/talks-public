@@ -1,0 +1,12 @@
+data MapOp k v =
+    Add k v
+  | Del k
+
+theory Map k v where
+  model = [MapOp k v]
+
+  law absorb = [Add k v1, Add k v2] = [Add k v2]
+  law commute = [Add k1 v1, Add k2 v2] =
+                [Add k2 v2, Add k1 v1]
+                where k1 /= k2
+  law cancel = [Add k v, Del k] = []

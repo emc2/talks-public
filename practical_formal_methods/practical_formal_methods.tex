@@ -1,0 +1,694 @@
+\documentclass{beamer}
+\usepackage{MnSymbol}
+\usepackage{listings}
+
+\title{Combining Formal Methods and Industrial Pragmatics}
+\author{Eric L. McCorkle}
+
+\newcommand{\typekw}[1]{\ensuremath{{\operatorname{type}}_{#1}}}
+\newcommand{\propkw}{\ensuremath{\operatorname{prop}}}
+\newcommand{\truthkw}{\ensuremath{\operatorname{truth}}}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{My Background and Motivations}
+  \begin{itemize}
+    \item Started out as a systems/kernel hacker, got interest in
+      compilers
+    \item Studied concurrency in early grad school
+    \item Interest in formal methods started as a side-effect of work on
+      lock-free algorithms
+    \item Studied programming language semantics, mathematical
+      foundations as a Ph.D student
+    \item Worked in Java Platform Group at Oracle, saw realities of
+      enterprise-scale industrial programming
+    \item Moved into infosec to work on better static analysis
+    \item I believe formal methods can make a huge impact if it draws
+      on pragmatic knowledge from industrial practice, systems
+      programming, and information security
+  \end{itemize}
+\end{frame}
+
+\section{Motivation}
+
+\begin{frame}
+  \frametitle{Motivation: The Changing World of Computing}
+  \begin{itemize}
+    \item 2014 saw a number of high-profile critical vulnerabilities;
+      2015 made 2014 look like a vacation
+    \item Infrastructure increasingly under attack, attacks growing
+      more sophisticated (state-sponsored)
+    \item Moore's ``Law'' expiring (or expired), optimization relying
+      on more difficult techniques (concurrency, custom hardware)
+    \item No mature engineering discipline relies \emph{solely} on testing
+    \item Programming efficiency: ``of course I'm not busy; I did it
+      right the first time!''
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{The Information Security Problem}
+  \begin{itemize}
+    \item State of information security is ``a national crisis'' (Rep. Ted Lieu)
+    \item Problem has many facets, ranging from highly technical to social
+    \item Requires solutions from many angles
+    \item Languages and tools are a significant part of the problem
+    \item \emph{Build security in} is a powerful philosophy
+    \item Formal methods and verification are the language and tools
+      embodiment of ``building security in''
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Difficulty of Increasing Computing Power}
+  \begin{itemize}
+    \item In the Good Old Days, clocks doubled every 18 months, nobody
+      cared about memory bandwidth, parallelism, etc
+    \item In 2004, the party started to end: Intel shifted from faster
+      clocks to more cores
+    \item Concurrency proved to be very difficult to manage
+    \item CPU topologies becoming increasingly important
+    \item FPGA's, ASICs, custom hardware
+    \item If concurrency is hard, hardware is worse
+    \item Takeaway: continuing to increase available computing power
+      involves increasingly difficult programming models
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Engineering Methodologies}
+  \begin{itemize}
+    \item Mature engineering disciplines have tools for specifying and
+      reasoning about the artifacts they produce
+    \item Bridge, airplane, etc. designs undergo rigorous evaluation
+      before construction
+    \item Specify needs, then design/build to meet specifications
+    \item Massive savings in time, resources, labor
+    \item Software engineering could benefit from this as well
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Software Lifecycle Inefficiencies}
+  \begin{itemize}
+    \item Gap between design/specification and code (exact specs are
+      tedious to write and maintain)
+    \item Existing languages typically lack good facilities for
+      reasoning about code
+    \item Conventional testing generally can't achieve total coverage
+    \item Even high coverage can involve large test-to-code ratios
+      (excess of 15:1, compare CompCert's 2:1)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  These are all problems that formal methods techniques can address.
+  The key is making them accessible and practical for industrial use.
+\end{frame}
+
+\section{Industrial Pragmatics}
+
+\begin{frame}
+  \frametitle{Making Formal Methods Practical}
+  Hypothesis: the field of formal methods has advanced to the point
+  where it can adequately address most problems in industrial-scale
+  software development; however, an effort is needed to make it
+  \emph{practical}.
+  \begin{itemize}
+    \item Adapt techniques (dependent types, verification, etc) to
+      realities of industrial software development
+    \item Develop new ways of using existing formal techniques
+    \item Make formal techniques accessible to ``working programmers''
+    \item Develop language features, design patterns for managing
+      large bodies of verified software
+    \item Expand existing techniques to deal with hard cases
+      (lock-free concurrency, physical systems, etc)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Realities of Industrial Software Development}
+  \begin{itemize}
+    \item Golden Rule: path of least eventual cost (or pain)
+    \item Scarcity: limited resources, cost/benefit tradeoffs, ROI
+    \item Entropy: Bit-rot, refactoring, code evolution over time
+    \item Human Factors: Large staff, varied skill levels, staff turnover
+    \item Inelegance: Configurability, complex interfaces,
+      customizations, irreducable complexity
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Industrial Languages: What Works?}
+  \begin{itemize}
+    \item Optimize for the path of least eventual cost
+    \item Make it easy to do the right thing, hard to do the bad thing
+    \item ``Harm-reduction'' better than decrees
+    \item Modularization, separation of concerns, code reusability,
+      separate interfaces from implementations
+    \item Present difficult ideas in a way that makes them accessible
+    \item The art of API design
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Practicality Challenges for Formal Methods}
+  \begin{itemize}
+    \item Present verification capabilities as a benefit or a tool,
+      not a demand
+    \item Deal with realities of limited resources, diminishing
+      returns, and ROI of proving things correct
+    \item \emph{How do we organize and maintain large bodies of
+      verified code and proofs?}
+    \item What does ``object-oriented (or typeclasses) for proofs''
+      look like?
+    \item Create a truly practical proof automation system that
+      working programmers can use
+    \item What are the good design patterns for verified code?  What
+      are the anti-patterns?
+    \item Apply the art of API design to proof libraries
+  \end{itemize}
+\end{frame}
+
+\section{Pay-as-You-Go}
+
+\begin{frame}
+  \frametitle{The Need for Gradualism}
+
+  Demanding that a program be proven correct before it can be run is
+  unacceptable for industrial use.
+  \begin{itemize}
+    \item Ignores realities of limited resources and diminishing returns
+    \item Some parts of a program are more critical than others
+      (crypto, auth, control logic vs. logging, XML parser/generator)
+    \item Some kinds of programs or libraries may be very difficult to verify
+    \item Prototyping efforts, demos, etc
+    \item Humans don't write code that way
+    \item Can't eliminate testing (need to check the spec)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{New Paradigms}
+  \begin{itemize}
+    \item View dependent types as a reasoning system built into the language
+    \item View verification as a quality practice (total coverage at
+      high up-front cost)
+    \item Start with crude/no spec, no verification, refine over time
+    \item Refinement of spec develops more detailed descriptions of behavior
+    \item Verify critical components, then work outwards
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Verification and Testing}
+  Verification fits on a continuum with existing quality practices
+  \begin{itemize}
+    \item Smoke-tests: one-off tests- very low quality, minimal cost
+    \item Regression suites: tests against historical failures- low
+      cost, low quality
+    \item Unit/System tests: engineered test suites- mid cost, can
+      achieve reasonable quality
+    \item Enumeration/Randomized Stress-Tests: tools built to
+      automatically generate huge numbers of test cases- high cost, high quality
+    \item Verification: proving implementation obeys spec- high
+      up-front cost, total coverage
+  \end{itemize}
+  But you still need to test the spec!
+\end{frame}
+
+\begin{frame}
+  \frametitle{Gradual Proof-Checking}
+  \begin{itemize}
+    \item Adopt a two-stage type/proof-checking design
+    \item Stage 1 is (decidable) type-checking, provides guarantees on
+      the level of Hindley-Milner/Haskell/Java/etc
+    \item Type-checking produces a set of proof obligations as an artifacts
+    \item Stage 2 is (undecidable) proof-checking, discharges proof
+      obligations
+    \item If we discharge all proof obligations, the program is
+      ``safe'' (check the spec!)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Other Uses of Proof Obligations}
+
+  We can do other things with proof obligations besides prove them:
+  \begin{itemize}
+    \item Filter out non-trivial obligations with automated provers
+    \item Provide to a compiler for optimization purposes
+    \item Debugging, program exploration
+    \item Test generation/coverage reporting
+    \item Early failure detection
+    \item Generate runtime assertions
+    \item <insert potential thesis topic here>
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Going Further: Gradual Typing}
+
+  Even bigger challenge: can we get dynamic language folks hooked on
+  formal methods?
+  \begin{itemize}
+    \item Dynamic languages are popular because they are good for prototyping
+    \item Upside: gets code out fast, reduce up-front cost
+    \item Downside: (much) higher eventual cost
+    \item Problem: you have to choose between lower up-front cost and
+      lower eventual cost
+    \item Currently a high barrier to transitioning a project to a
+      more sustainable platform
+    \item Embrace gradual typing in addition to gradual proving
+    \item Goal: smooth transition from a prototype to a verified
+      system, can stop at any point along the way
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Takeaways}
+  \begin{itemize}
+    \item Gradualism is good!
+    \item People work iteratively, \emph{especially} in industry
+    \item Some verification is better than none
+    \item Verification exists on a continuum with other quality practices
+    \item Provide a clean migration path from scrappy prototypes to
+      verified systems
+    \item Recognize the tradeoffs, present options, not requirements
+  \end{itemize}
+\end{frame}
+
+\section{Proof Automation}
+
+\begin{frame}
+  \frametitle{Proof Scripting}
+  \begin{itemize}
+    \item Modern dependently-typed languages provide a proof scripting
+      facility (Coq, Lean, etc.)
+    \item Tend to be awkward, un-idiomatic for the language, also
+      difficult to debug
+    \item Working programmers dislike inconsistency and incoherence
+    \item Proof-scripting ends up largely being an exercise in
+      tree-transformation
+    \item This is a model familiar to many programmers
+  \end{itemize}
+  How can we design a more practical proof-automation framework?
+\end{frame}
+
+\begin{frame}
+  \frametitle{Preliminaries}
+  \begin{itemize}
+    \item Assume we have a Coq-like separation of types, values, and
+      propositions
+    \item \typekw{n}: Rank-$n$ type
+    \item \propkw{}: Propositions
+    \item ``Truth environment'' consists of propositions known to be true
+    \item \truthkw{}: a \propkw{} in the truth environment
+    \item Refinement types construct \typekw{n+1} from a \typekw{n}
+      and a \propkw{}
+    \item We can compute over values, not over \typekw{n}s or
+      \propkw{}s
+    \item A proof obligation consists of a type environment, a truth
+      environment and a goal (a \propkw)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Proof Monad}
+  \begin{itemize}
+    \item A ``proof monad'' (Kirchner, Mu\~{n}oz) is a managed
+      execution environment for dispatching proof obligations
+    \item Manages the goal(s) as well as the type and truth
+      environments
+    \item Provides the primitive proof rules (i.e. intuitionistic
+      logic) as stateful operations that change the goal state, proof,
+      and type environments in controlled ways
+    \item Bad applications of primitive proof rules fail in some way
+      (i.e. throw an exception)
+    \item Programs running in a proof monad can only prove a valid
+      \propkw{} or fail; managed environment prevents proving an
+      invalid \propkw{}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Proofs and Tactics in the Same Language}
+
+  The proof monad execution environment combined with gradualism
+  provides a foundation for writing proofs and tactics in the
+  programming lanugage itself
+  \begin{itemize}
+    \item Provide a reflection API, which provides access to an
+      AST-like structure for a given value
+    \item $\operatorname{typeclass} \operatorname{reflect} a b$: ``I can
+      reflect an $a$ as a $b$'', for reflection as ``nicer'' data
+      structures.
+    \item Reflecting \typekw{n}s and \propkw{}s gives a way to compute
+      on them (with structural equality)
+    \item Provide access to the goals and truth environment in a way
+      that can guide computation through the reflection API
+    \item We can then write proofs and tactics in the same language as
+      implementations
+    \item These proofs/tactics would also give rise to proof
+      obligations
+    \item If we prove the obligations for the proofs/tactics, then we
+      know they \emph{always} produce a proof
+    \item If we \emph{don't} prove them, then the proofs/tactics might
+      fail unexpectedly, but the managed environment prevents them
+      from producing an invalid proof
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Proof Automation}
+  \begin{itemize}
+    \item Low-level proofs (apply, apply, rewrite,\ldots) are the
+      equivalent of programming in assembly, tactics are the
+      equivalent of functions
+    \item Other extreme: ATP's, Chlipala's ``crush'' tactic
+    \item Problem with ATP's: great when they works, trouble when they don't
+    \item Can we find middle-ground that gives us the extensibility of
+      automated proving, but with better failure modes?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Decision Procedures and Transformers}
+  \begin{itemize}
+    \item Intuition: mathematical proofs often take the form of ``I
+      have these preconditions and a term of this particular form''
+    \item Tactics: ``go from a proposition of this exact structure and
+      truths of this exact structure to propositions of this exact
+      structure''; generalize this into ``goals of this \emph{general} form''
+      (Lean, some advanced Coq tactics attempt to do this)
+    \item Here are some possible idioms based on this idea:
+      \begin{itemize}
+        \item ``Recognizers'': function of the form $a \rightarrow
+          \operatorname{bool}$ (where we have a $\operatorname{reflect}
+          \operatorname{prop} a$ instance)
+        \item ``Decision procedures'': solve a goal matched by a given
+          recognizer, or else report errors conforming to a
+          well-defined interface
+        \item ``Transformers'': transform a goal matched by a
+          recognizer into new goal(s) matching some recognizer(s)
+        \item All these should provably terminate
+      \end{itemize}
+    \item Rationale: try to get away from rigid structural
+      requirements, but make failures more informative
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{A Word on Termination}
+  \begin{itemize}
+    \item Termination proofs ``necessary'' for any code executed by
+      the compiler (proofs, tactics, decision procedures, etc)
+    \item In practice, we can adopt a ``shoot it down after 5
+      seconds'' termination solution for unproven code
+    \item Requiring termination proofs would be actively \emph{wrong}
+      for many real applications (ex. servers, concurrency control, etc.)
+    \item Also too strong for many theoretical guarantees (ex. lock-freedom)
+    \item Takeaway: adopt lazy termination proof obligations (Weirich
+      et al.), use timeouts for unproven code
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Takeaways}
+  \begin{itemize}
+    \item Managed proof monad environment, reflection typeclass allow
+      writing proofs in the same language as implementations
+    \item Two-stage type/proof-checking
+    \item Aim for targeted automated proof procedures with
+      well-defined failure modes
+    \item Many interesting research possibilities here
+      \begin{itemize}
+        \item Use proof obligations for more than just proofs
+        \item What are good/bad idioms for proof automation
+        \item Programming paradigms for proofs (see next section)
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section{Language Features}
+
+\begin{frame}
+  \frametitle{Languages at Scale}
+
+  Industrial languages have to cope with stresses that emerge at large
+  scales of code size, staff size, scope, and time
+  \begin{itemize}
+    \item Older languages lacked features for organizing code
+      (classes, typeclasses, modules, etc); this limits the size of
+      code that was feasible
+    \item Object-Oriented popularized features that allowed better
+      scaling
+    \item OO features have since been decomposed, refined, and
+      generalized (existential types, subtypes, etc), allowing other
+      paradigms to scale well
+    \item Question: what kinds of features would have the same effect
+      on proofs and verified code?
+    \item Also: how do we integrate verification-related features into
+      existing paradigms
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Dependent OO Classes}
+  \begin{itemize}
+    \item OO classes combine state management, encapsulation, and subtyping
+    \item Separation logic, Hoare types can handle higher-order
+      stateful computation (Ynot project)
+    \item Abstract predicates: declare abstract properties, define
+      meaning in implementations
+    \item Specify behaviors in terms of abstract predicates
+    \item Invariants: predicates preserved across all operations (more
+      important when dealing with atomic concurrency)
+    \item Every class has an implicit ``well-formed'' invariant can
+      have others
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Dependent OO Classes (Example)}
+  Example of a dependent OO class:
+  \lstinputlisting{ooclass}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Dependent Typeclasses}
+  \begin{itemize}
+    \item Typeclasses generalize nicely to algebras
+    \item Add abstract properties, similar to dependent OO classes
+    \item Laws: equivalences between expressions that must hold for
+      implementations
+    \item Should be able to mechanically transform OO classes with
+      invariants into algebras (add this parameter, transform Hoare
+      types)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Dependent Typeclass (Example)}
+  Example of a dependent typeclass:
+  \lstinputlisting{typeclass}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Abstracting Proofs: Theories}
+
+  Note: this is an unproven idea for a language feature
+  \begin{itemize}
+    \item Idea: prove things about an abstract data structure
+      (\emph{model})
+    \item Instances map to the abstract data structure, prove certain laws hold
+    \item Then everything proven about the abstract data structure
+      holds for the instance data structure
+    \item This is basically how category theory works (the model is a
+      graph with equivalences over paths)
+    \item As a language feature, theories would look most similar to
+      typeclasses
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Theories and Instances}
+  Theories:
+  \begin{itemize}
+    \item Model: concrete data structure definition
+    \item Laws: concrete properties about the model that must hold
+    \item Definitions and proofs: concrete definitions and proofs that
+      will hold for all instances of the theory
+  \end{itemize}
+  Instances:
+  \begin{itemize}
+    \item Mapping from reflected terms of the instance type to the
+      model type
+    \item Proof that all laws hold
+    \item Then you get all the definitions and proofs for free!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example of Theories}
+
+  Example of a theory of maps:
+  \lstinputlisting{theoryhead}
+  We model maps as a history of all add/delete operations
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example of Theories}
+
+  Concrete property:
+  \lstinputlisting{theoryprop}
+  We can define the contains property and reason about it
+\end{frame}
+
+\begin{frame}
+  \frametitle{Theory Instances}
+  \begin{itemize}
+    \item We need to map reflected terms of the instance type to the model
+    \item We can also generate ``placeholders'': models arising from a
+      given term, which we don't know anything about (yet)
+    \item Placeholders are essentially existential variables indexed
+      by a term
+    \item We can prove equivalence of two placeholders by proving
+      equivalence of their terms
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example of a Theory Instance}
+
+  For the instance, we map calls to the get and delete functions to
+  the model, everything else to a placeholder
+  \lstinputlisting{theoryinst}
+  (Note: this shows why we want to reflect into nicer data structures!)
+\end{frame}
+
+\begin{frame}
+  \frametitle{Modeling General Concurrency}
+  \begin{itemize}
+    \item Hoare types handle higher-order \emph{non-concurrent}
+      stateful computation nicely; what about concurrency
+    \item Ownership types, etc good for lock-based, but what about
+      lock-free concurrency?
+    \item Answer: theories of execution traces!
+    \item A specification gives one model of behavior; another is
+      derived automatically from the implementation; obligation is to
+      prove equivalence
+    \item Different theories can give us different consistency
+      (linearizability, serializability) and memory (TSO, PSO,
+      causality, etc) models
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{A Model for Linearizable Concurrency}
+  \begin{itemize}
+    \item Atomic operations are Hoare-style pre/post-condition pairs
+    \item Compose $\circ$, optimistic/pessimistic nondeterminism
+      $\sqcup$/$\sqcap$, fixpoint operator $\mu x. f(x)$
+    \item Under certain circumstances, we can apply \emph{reductions},
+      which transform the behavior:
+      \begin{itemize}
+        \item At an encapsulation boundary (i.e. classes), we can
+          discard concrete properties about state, retaining only
+          abstract properties (this is what makes lock/wait-free data
+          structures possible), then discard no-ops
+        \item Apply transforms from Lipton's Left/Right movers theory
+          to reason about locks
+        \item In purely sequential execution, reduce to a single
+          Hoare-triple
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Takeaways}
+  \begin{itemize}
+    \item Integrating with existing software engineering-focused
+      language features is essential
+    \item Specifications, verification, and dependent types fit nicely
+      into existing language features (OO classes, typeclasses)
+    \item Paradigm of characterizing things (theories) as an abstract
+      data structure, then reasoning about the abstract structure
+      looks promising
+    \item Reflection mechanism from before proves useful
+    \item Theories also provide a way to reason about many models of
+      concurrency
+  \end{itemize}
+\end{frame}
+
+\section{Software Engineering Practice}
+
+\begin{frame}
+  \frametitle{Software Engineering Questions}
+  \begin{itemize}
+    \item Many interesting questions arise regarding how to integrate
+      formal methods into software engineering practice
+    \item Impossible to know answers without experience, but we can
+      make some good speculations
+    \item Encourage a notion of ``maturity'' that includes detailed
+      behavior specifications, verification of implementations,
+      existence of proof automation, decision procedures, etc
+    \item Open question: what sorts of design patterns lead to easy
+      verification?
+    \item Intuition: abstract algebra, particularly N\"{o}ther's
+      theory of modules likely to be very useful
+    \item What would happen if we turned good API designers loose on
+      traditional mathematics?
+    \item How do we present these ideas in a way that's accessible to
+     ``working programmers'' (hugely important)?
+  \end{itemize}
+\end{frame}
+
+\section{Conclusions, Future Work}
+
+\begin{frame}
+  \frametitle{Conclusions}
+  \begin{itemize}
+    \item Very interesting possibilities for integrating industrial
+      pragmatics with formal methods
+    \item A programming lanugage embodying these ideas would be
+      \emph{immensely} powerful
+    \item Key paradigm shifts: view dependent types as a built-in
+      reasoning system, embrace gradualism, think in terms of
+      cost/benefit tradeoffs
+    \item Reflection plays a key role in proof automation, also
+      in reasoning about concurrent behavior
+    \item Integrate dependent types into OO classes/typeclasses,
+      theories for generalizing proofs
+    \item Many open questions/opportunities
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{My Work}
+  I have been pursuing work on this on my own for some time:
+  \begin{itemize}
+    \item Integration with industrial pragmatics grew out of
+      experiences in OpenJDK, infosec world
+    \item Recently began promoting ideas in the infosec world (very
+      good reception)
+    \item Working on a programming language designed around these ideas (Salt)
+    \item Salt language aims to be useful for low-level programming
+      (kernel, lock-free concurrency, firmware)
+    \item Also pursuing pure semantic theory work aimed at building a
+      stronger connection to physical systems
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Let's Talk}
+
+  There are a lot of open questions here, and the idea needs input;
+  I'm happy to talk about ideas!
+\end{frame}
+
+\end{document}

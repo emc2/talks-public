@@ -1,0 +1,16 @@
+interface Map<K, V> {
+  property contains(K k, V v);
+  invariant injective = contains(k, v1) &&
+            contains(k, v2) => v1 = v2;
+
+  V get(K k)
+    returns v
+    requires contains(k, v);
+
+  void put(K k, V v)
+    ensures contains(k, v);
+
+  void delete(K k)
+    requires exists V v. contains(k, v)
+    ensures not exists V v. contains(k, v);
+}

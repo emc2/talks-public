@@ -1,0 +1,15 @@
+typeclass Map k v m where
+  property contains : m -> k -> v -> prop
+  law injective = contains m k v1 &&
+                  contains m k v2 => v1 = v2
+
+  get : (this : m) -> (key : k) -> (val : v)
+    where contains this key val
+
+  put : (this : m) -> (key : k) ->
+        (val : v) -> (new : m)
+    where contains new key val
+
+  delete : (this : m) -> (key : k) -> (new : m)
+    where exists v. contains this k v &&
+          not exists v. contains this k v
