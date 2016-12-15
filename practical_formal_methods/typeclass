@@ -8,7 +8,9 @@ typeclass Map k v m where
 
   put : (this : m) -> (key : k) ->
         (val : v) -> (new : m)
-    where contains new key val
+    where contains new key val &&
+          not exists val' /= val.
+              contains new key val'
 
   delete : (this : m) -> (key : k) -> (new : m)
     where exists v. contains this k v &&

@@ -4,13 +4,14 @@ interface Map<K, V> {
             contains(k, v2) => v1 = v2;
 
   V get(K k)
-    returns v
-    requires contains(k, v);
+    requires contains(k, v)
+    returns v;
 
   void put(K k, V v)
-    ensures contains(k, v);
+    ensures contains(k, v) &&
+      !exists v0 != v. contains(k, v0);
 
   void delete(K k)
     requires exists V v. contains(k, v)
-    ensures not exists V v. contains(k, v);
+    ensures !exists V v. contains(k, v);
 }

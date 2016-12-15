@@ -17,13 +17,12 @@
 \begin{frame}
   \frametitle{My Background and Motivations}
   \begin{itemize}
-    \item Started out as a systems/kernel hacker, got interest in
+    \item Started out as a systems/kernel hacker, got interested in
       compilers
-    \item Studied concurrency in early grad school
     \item Interest in formal methods started as a side-effect of work on
       lock-free algorithms
-    \item Studied programming language semantics, mathematical
-      foundations as a Ph.D student
+    \item Started studying programming language semantics,
+      mathematical foundations
     \item Worked in Java Platform Group at Oracle, saw realities of
       enterprise-scale industrial programming
     \item Moved into infosec to work on better static analysis
@@ -36,24 +35,18 @@
 \section{Motivation}
 
 \begin{frame}
-  \frametitle{Motivation: The Changing World of Computing}
-  \begin{itemize}
-    \item 2014 saw a number of high-profile critical vulnerabilities;
-      2015 made 2014 look like a vacation
-    \item Infrastructure increasingly under attack, attacks growing
-      more sophisticated (state-sponsored)
-    \item Moore's ``Law'' expiring (or expired), optimization relying
-      on more difficult techniques (concurrency, custom hardware)
-    \item No mature engineering discipline relies \emph{solely} on testing
-    \item Programming efficiency: ``of course I'm not busy; I did it
-      right the first time!''
-  \end{itemize}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
 \end{frame}
 
 \begin{frame}
   \frametitle{The Information Security Problem}
   \begin{itemize}
-    \item State of information security is ``a national crisis'' (Rep. Ted Lieu)
+    \item 2014 saw a number of high-profile critical vulnerabilities;
+      2015 made 2014 look like a vacation; 2016 showed very serious
+      impacts of breaches
+    \item Infrastructure increasingly under attack, attacks growing
+      more sophisticated (state-sponsored)
     \item Problem has many facets, ranging from highly technical to social
     \item Requires solutions from many angles
     \item Languages and tools are a significant part of the problem
@@ -101,7 +94,6 @@
       reasoning about code
     \item Conventional testing generally can't achieve total coverage
     \item Even high coverage can involve large test-to-code ratios
-      (excess of 15:1, compare CompCert's 2:1)
   \end{itemize}
 \end{frame}
 
@@ -110,24 +102,19 @@
   The key is making them accessible and practical for industrial use.
 \end{frame}
 
-\section{Industrial Pragmatics}
-
 \begin{frame}
   \frametitle{Making Formal Methods Practical}
   Hypothesis: the field of formal methods has advanced to the point
   where it can adequately address most problems in industrial-scale
   software development; however, an effort is needed to make it
   \emph{practical}.
-  \begin{itemize}
-    \item Adapt techniques (dependent types, verification, etc) to
-      realities of industrial software development
-    \item Develop new ways of using existing formal techniques
-    \item Make formal techniques accessible to ``working programmers''
-    \item Develop language features, design patterns for managing
-      large bodies of verified software
-    \item Expand existing techniques to deal with hard cases
-      (lock-free concurrency, physical systems, etc)
-  \end{itemize}
+\end{frame}
+
+\section{Industrial Pragmatics}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
 \end{frame}
 
 \begin{frame}
@@ -177,6 +164,11 @@
 \section{Pay-as-You-Go}
 
 \begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
+\begin{frame}
   \frametitle{The Need for Gradualism}
 
   Demanding that a program be proven correct before it can be run is
@@ -205,7 +197,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Verification and Testing}
+  \frametitle{Verification as as Quality Practice}
   Verification fits on a continuum with existing quality practices
   \begin{itemize}
     \item Smoke-tests: one-off tests- very low quality, minimal cost
@@ -223,8 +215,8 @@
 
 \begin{frame}
   \frametitle{Gradual Proof-Checking}
+  Support gradualism with a two-stage type/proof-checking architecture:
   \begin{itemize}
-    \item Adopt a two-stage type/proof-checking design
     \item Stage 1 is (decidable) type-checking, provides guarantees on
       the level of Hindley-Milner/Haskell/Java/etc
     \item Type-checking produces a set of proof obligations as an artifacts
@@ -285,6 +277,11 @@
 \section{Proof Automation}
 
 \begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
+\begin{frame}
   \frametitle{Proof Scripting}
   \begin{itemize}
     \item Modern dependently-typed languages provide a proof scripting
@@ -318,7 +315,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Proof Monad}
+  \frametitle{Proof Monad as a Managed Execution Environment}
   \begin{itemize}
     \item A ``proof monad'' (Kirchner, Mu\~{n}oz) is a managed
       execution environment for dispatching proof obligations
@@ -336,15 +333,11 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Proofs and Tactics in the Same Language}
-
-  The proof monad execution environment combined with gradualism
-  provides a foundation for writing proofs and tactics in the
-  programming lanugage itself
+  \frametitle{Proofs and Tactics in the Implementation Language}
   \begin{itemize}
     \item Provide a reflection API, which provides access to an
       AST-like structure for a given value
-    \item $\operatorname{typeclass} \operatorname{reflect} a b$: ``I can
+    \item $\operatorname{typeclass} \operatorname{reflect} a\; b$: ``I can
       reflect an $a$ as a $b$'', for reflection as ``nicer'' data
       structures.
     \item Reflecting \typekw{n}s and \propkw{}s gives a way to compute
@@ -364,13 +357,13 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Proof Automation}
+  \frametitle{Proof Automation Methodologies}
   \begin{itemize}
     \item Low-level proofs (apply, apply, rewrite,\ldots) are the
       equivalent of programming in assembly, tactics are the
       equivalent of functions
     \item Other extreme: ATP's, Chlipala's ``crush'' tactic
-    \item Problem with ATP's: great when they works, trouble when they don't
+    \item Problem with ATP's: great when they work, trouble when they don't
     \item Can we find middle-ground that gives us the extensibility of
       automated proving, but with better failure modes?
   \end{itemize}
@@ -406,13 +399,13 @@
   \frametitle{A Word on Termination}
   \begin{itemize}
     \item Termination proofs ``necessary'' for any code executed by
-      the compiler (proofs, tactics, decision procedures, etc)
+      the type/proof-checker (proofs, tactics, decision procedures, etc)
     \item In practice, we can adopt a ``shoot it down after 5
       seconds'' termination solution for unproven code
     \item Requiring termination proofs would be actively \emph{wrong}
       for many real applications (ex. servers, concurrency control, etc.)
     \item Also too strong for many theoretical guarantees (ex. lock-freedom)
-    \item Takeaway: adopt lazy termination proof obligations (Weirich
+    \item Solution: adopt lazy termination proof obligations (Weirich
       et al.), use timeouts for unproven code
   \end{itemize}
 \end{frame}
@@ -435,6 +428,11 @@
 \end{frame}
 
 \section{Language Features}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
 
 \begin{frame}
   \frametitle{Languages at Scale}
@@ -476,6 +474,7 @@
 \begin{frame}
   \frametitle{Dependent OO Classes (Example)}
   Example of a dependent OO class:
+  \lstset{language=java, basicstyle=\ttfamily\scriptsize}
   \lstinputlisting{ooclass}
 \end{frame}
 
@@ -495,6 +494,7 @@
 \begin{frame}
   \frametitle{Dependent Typeclass (Example)}
   Example of a dependent typeclass:
+  \lstset{language=haskell, basicstyle=\ttfamily\scriptsize}
   \lstinputlisting{typeclass}
 \end{frame}
 
@@ -537,6 +537,7 @@
   \frametitle{Example of Theories}
 
   Example of a theory of maps:
+  \lstset{language=haskell, basicstyle=\ttfamily\scriptsize}
   \lstinputlisting{theoryhead}
   We model maps as a history of all add/delete operations
 \end{frame}
@@ -545,6 +546,7 @@
   \frametitle{Example of Theories}
 
   Concrete property:
+  \lstset{language=haskell, basicstyle=\ttfamily\scriptsize}
   \lstinputlisting{theoryprop}
   We can define the contains property and reason about it
 \end{frame}
@@ -567,6 +569,7 @@
 
   For the instance, we map calls to the get and delete functions to
   the model, everything else to a placeholder
+  \lstset{language=haskell, basicstyle=\ttfamily\scriptsize}
   \lstinputlisting{theoryinst}
   (Note: this shows why we want to reflect into nicer data structures!)
 \end{frame}
@@ -575,7 +578,7 @@
   \frametitle{Modeling General Concurrency}
   \begin{itemize}
     \item Hoare types handle higher-order \emph{non-concurrent}
-      stateful computation nicely; what about concurrency
+      stateful computation nicely; what about concurrency?
     \item Ownership types, etc good for lock-based, but what about
       lock-free concurrency?
     \item Answer: theories of execution traces!
@@ -599,8 +602,8 @@
       \begin{itemize}
         \item At an encapsulation boundary (i.e. classes), we can
           discard concrete properties about state, retaining only
-          abstract properties (this is what makes lock/wait-free data
-          structures possible), then discard no-ops
+          abstract properties, then discard no-ops (this is what makes
+          linearizable lock/wait-free data structures possible)
         \item Apply transforms from Lipton's Left/Right movers theory
           to reason about locks
         \item In purely sequential execution, reduce to a single
@@ -628,12 +631,16 @@
 \section{Software Engineering Practice}
 
 \begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
+
+\begin{frame}
   \frametitle{Software Engineering Questions}
+  Many interesting questions arise regarding how to integrate
+  formal methods into software engineering practice.
   \begin{itemize}
-    \item Many interesting questions arise regarding how to integrate
-      formal methods into software engineering practice
-    \item Impossible to know answers without experience, but we can
-      make some good speculations
     \item Encourage a notion of ``maturity'' that includes detailed
       behavior specifications, verification of implementations,
       existence of proof automation, decision procedures, etc
@@ -649,6 +656,12 @@
 \end{frame}
 
 \section{Conclusions, Future Work}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
 
 \begin{frame}
   \frametitle{Conclusions}
@@ -674,9 +687,9 @@
   \begin{itemize}
     \item Integration with industrial pragmatics grew out of
       experiences in OpenJDK, infosec world
-    \item Recently began promoting ideas in the infosec world (very
-      good reception)
-    \item Working on a programming language designed around these ideas (Salt)
+    \item Recently began promoting ideas in the infosec world (good reception)
+    \item Working on a programming language designed around these
+      ideas (working name: salt)
     \item Salt language aims to be useful for low-level programming
       (kernel, lock-free concurrency, firmware)
     \item Also pursuing pure semantic theory work aimed at building a
@@ -687,7 +700,7 @@
 \begin{frame}
   \frametitle{Let's Talk}
 
-  There are a lot of open questions here, and the idea needs input;
+  There are a lot of open questions here, and the ideas need input;
   I'm happy to talk about ideas!
 \end{frame}
 

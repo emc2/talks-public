@@ -10,3 +10,4 @@ theory Map k v where
                 [Add k2 v2, Add k1 v1]
                 where k1 /= k2
   law cancel = [Add k v, Del k] = []
+  ...

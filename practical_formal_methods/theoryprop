@@ -1,8 +1,9 @@
 contains : [MapOp k v] -> k -> v -> bool
 contains [] _ _ = False
-contains (l ++ [Add k' _]) k v
-  | k' /= v = contains l k v
-  | otherwise = True
+contains (l ++ [Add k' v']) k v
+  | k' /= k = contains l k v
+  | v' == v = True
+  | otherwise = False
 contains (l ++ [Del k' _]) k v
-  | k' /= v = contains l k v
+  | k' /= k = contains l k v
   | otherwise = False
