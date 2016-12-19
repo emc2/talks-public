@@ -45,10 +45,8 @@
     \item 2014 saw a number of high-profile critical vulnerabilities;
       2015 made 2014 look like a vacation; 2016 showed very serious
       impacts of breaches
-    \item Infrastructure increasingly under attack, attacks growing
-      more sophisticated (state-sponsored)
-    \item Problem has many facets, ranging from highly technical to social
-    \item Requires solutions from many angles
+    \item Infrastructure increasingly under attack
+    \item Attacks growing more sophisticated (state-sponsored)
     \item Languages and tools are a significant part of the problem
     \item \emph{Build security in} is a powerful philosophy
     \item Formal methods and verification are the language and tools
@@ -98,16 +96,14 @@
 \end{frame}
 
 \begin{frame}
-  These are all problems that formal methods techniques can address.
-  The key is making them accessible and practical for industrial use.
-\end{frame}
-
-\begin{frame}
   \frametitle{Making Formal Methods Practical}
+
+  These are all problems that formal methods techniques can address.
+
   Hypothesis: the field of formal methods has advanced to the point
-  where it can adequately address most problems in industrial-scale
-  software development; however, an effort is needed to make it
-  \emph{practical}.
+  where they can adequately address most problems in industrial-scale
+  software development; however, an effort is needed to make them
+  accessible and practical for industrial use.
 \end{frame}
 
 \section{Industrial Pragmatics}
@@ -133,10 +129,11 @@
   \frametitle{Industrial Languages: What Works?}
   \begin{itemize}
     \item Optimize for the path of least eventual cost
-    \item Make it easy to do the right thing, hard to do the bad thing
     \item ``Harm-reduction'' better than decrees
-    \item Modularization, separation of concerns, code reusability,
-      separate interfaces from implementations
+    \item Make it easy to do the right thing, hard to do the bad thing
+    \item Code organization features: modularization, separation of
+      concerns, code reusability, separate interfaces from
+      implementations
     \item Present difficult ideas in a way that makes them accessible
     \item The art of API design
   \end{itemize}
@@ -200,13 +197,14 @@
   \frametitle{Verification as as Quality Practice}
   Verification fits on a continuum with existing quality practices
   \begin{itemize}
-    \item Smoke-tests: one-off tests- very low quality, minimal cost
+    \item Smoke-tests: one-off tests- very low fidelity, minimal cost
     \item Regression suites: tests against historical failures- low
       cost, low quality
     \item Unit/System tests: engineered test suites- mid cost, can
-      achieve reasonable quality
+      achieve reasonable fidelity
     \item Enumeration/Randomized Stress-Tests: tools built to
-      automatically generate huge numbers of test cases- high cost, high quality
+      automatically generate huge numbers of test cases- high cost,
+      high fidelity
     \item Verification: proving implementation obeys spec- high
       up-front cost, total coverage
   \end{itemize}
@@ -222,6 +220,7 @@
     \item Type-checking produces a set of proof obligations as an artifacts
     \item Stage 2 is (undecidable) proof-checking, discharges proof
       obligations
+    \item Can compile and run if stage 1 passes
     \item If we discharge all proof obligations, the program is
       ``safe'' (check the spec!)
   \end{itemize}
@@ -243,7 +242,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Going Further: Gradual Typing}
+  \frametitle{Courting the Dynamic Language Crowd: Gradual Typing}
 
   Even bigger challenge: can we get dynamic language folks hooked on
   formal methods?
@@ -258,19 +257,6 @@
     \item Embrace gradual typing in addition to gradual proving
     \item Goal: smooth transition from a prototype to a verified
       system, can stop at any point along the way
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Takeaways}
-  \begin{itemize}
-    \item Gradualism is good!
-    \item People work iteratively, \emph{especially} in industry
-    \item Some verification is better than none
-    \item Verification exists on a continuum with other quality practices
-    \item Provide a clean migration path from scrappy prototypes to
-      verified systems
-    \item Recognize the tradeoffs, present options, not requirements
   \end{itemize}
 \end{frame}
 
@@ -289,9 +275,6 @@
     \item Tend to be awkward, un-idiomatic for the language, also
       difficult to debug
     \item Working programmers dislike inconsistency and incoherence
-    \item Proof-scripting ends up largely being an exercise in
-      tree-transformation
-    \item This is a model familiar to many programmers
   \end{itemize}
   How can we design a more practical proof-automation framework?
 \end{frame}
@@ -305,8 +288,6 @@
     \item \propkw{}: Propositions
     \item ``Truth environment'' consists of propositions known to be true
     \item \truthkw{}: a \propkw{} in the truth environment
-    \item Refinement types construct \typekw{n+1} from a \typekw{n}
-      and a \propkw{}
     \item We can compute over values, not over \typekw{n}s or
       \propkw{}s
     \item A proof obligation consists of a type environment, a truth
@@ -336,7 +317,7 @@
   \frametitle{Proofs and Tactics in the Implementation Language}
   \begin{itemize}
     \item Provide a reflection API, which provides access to an
-      AST-like structure for a given value
+      AST-like structure for a given value (or type, prop, truth)
     \item $\operatorname{typeclass} \operatorname{reflect} a\; b$: ``I can
       reflect an $a$ as a $b$'', for reflection as ``nicer'' data
       structures.
@@ -346,8 +327,16 @@
       that can guide computation through the reflection API
     \item We can then write proofs and tactics in the same language as
       implementations
-    \item These proofs/tactics would also give rise to proof
-      obligations
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Importance of a Managed Environment}
+  That we are running in a managed environment saves us from a
+  circularity problem:
+  \begin{itemize}
+    \item Proofs/tactics written in the implementation language also
+      give rise to proof obligations of their own
     \item If we prove the obligations for the proofs/tactics, then we
       know they \emph{always} produce a proof
     \item If we \emph{don't} prove them, then the proofs/tactics might
@@ -410,23 +399,6 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}
-  \frametitle{Takeaways}
-  \begin{itemize}
-    \item Managed proof monad environment, reflection typeclass allow
-      writing proofs in the same language as implementations
-    \item Two-stage type/proof-checking
-    \item Aim for targeted automated proof procedures with
-      well-defined failure modes
-    \item Many interesting research possibilities here
-      \begin{itemize}
-        \item Use proof obligations for more than just proofs
-        \item What are good/bad idioms for proof automation
-        \item Programming paradigms for proofs (see next section)
-      \end{itemize}
-  \end{itemize}
-\end{frame}
-
 \section{Language Features}
 
 \begin{frame}
@@ -450,8 +422,8 @@
       paradigms to scale well
     \item Question: what kinds of features would have the same effect
       on proofs and verified code?
-    \item Also: how do we integrate verification-related features into
-      existing paradigms
+    \item Question: how do we integrate with existing code
+      organization paradigms?
   \end{itemize}
 \end{frame}
 
@@ -481,7 +453,7 @@
 \begin{frame}
   \frametitle{Dependent Typeclasses}
   \begin{itemize}
-    \item Typeclasses generalize nicely to algebras
+    \item Typeclasses generalize nicely to algebras (Ed Kmett)
     \item Add abstract properties, similar to dependent OO classes
     \item Laws: equivalences between expressions that must hold for
       implementations
@@ -499,24 +471,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Abstracting Proofs: Theories}
-
-  Note: this is an unproven idea for a language feature
-  \begin{itemize}
-    \item Idea: prove things about an abstract data structure
-      (\emph{model})
-    \item Instances map to the abstract data structure, prove certain laws hold
-    \item Then everything proven about the abstract data structure
-      holds for the instance data structure
-    \item This is basically how category theory works (the model is a
-      graph with equivalences over paths)
-    \item As a language feature, theories would look most similar to
-      typeclasses
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Theories and Instances}
+  \frametitle{Feature Idea for Abstracting Proofs: Theories}
   Theories:
   \begin{itemize}
     \item Model: concrete data structure definition
@@ -540,15 +495,6 @@
   \lstset{language=haskell, basicstyle=\ttfamily\scriptsize}
   \lstinputlisting{theoryhead}
   We model maps as a history of all add/delete operations
-\end{frame}
-
-\begin{frame}
-  \frametitle{Example of Theories}
-
-  Concrete property:
-  \lstset{language=haskell, basicstyle=\ttfamily\scriptsize}
-  \lstinputlisting{theoryprop}
-  We can define the contains property and reason about it
 \end{frame}
 
 \begin{frame}
@@ -601,30 +547,14 @@
       which transform the behavior:
       \begin{itemize}
         \item At an encapsulation boundary (i.e. classes), we can
-          discard concrete properties about state, retaining only
-          abstract properties, then discard no-ops (this is what makes
-          linearizable lock/wait-free data structures possible)
+          discard internal concrete properties about state, retaining
+          only abstract properties, then discard no-ops (this is what
+          makes linearizable lock/wait-free data structures possible)
         \item Apply transforms from Lipton's Left/Right movers theory
           to reason about locks
         \item In purely sequential execution, reduce to a single
           Hoare-triple
       \end{itemize}
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Takeaways}
-  \begin{itemize}
-    \item Integrating with existing software engineering-focused
-      language features is essential
-    \item Specifications, verification, and dependent types fit nicely
-      into existing language features (OO classes, typeclasses)
-    \item Paradigm of characterizing things (theories) as an abstract
-      data structure, then reasoning about the abstract structure
-      looks promising
-    \item Reflection mechanism from before proves useful
-    \item Theories also provide a way to reason about many models of
-      concurrency
   \end{itemize}
 \end{frame}
 
@@ -646,12 +576,12 @@
       existence of proof automation, decision procedures, etc
     \item Open question: what sorts of design patterns lead to easy
       verification?
+    \item How do we present these ideas in a way that's accessible to
+     ``working programmers'' (hugely important)?
     \item Intuition: abstract algebra, particularly N\"{o}ther's
       theory of modules likely to be very useful
     \item What would happen if we turned good API designers loose on
       traditional mathematics?
-    \item How do we present these ideas in a way that's accessible to
-     ``working programmers'' (hugely important)?
   \end{itemize}
 \end{frame}
 
@@ -668,15 +598,15 @@
   \begin{itemize}
     \item Very interesting possibilities for integrating industrial
       pragmatics with formal methods
-    \item A programming lanugage embodying these ideas would be
-      \emph{immensely} powerful
     \item Key paradigm shifts: view dependent types as a built-in
       reasoning system, embrace gradualism, think in terms of
       cost/benefit tradeoffs
-    \item Reflection plays a key role in proof automation, also
-      in reasoning about concurrent behavior
+    \item Reflection and managed proof environment allow writing
+      proofs and tactics in the implementation language
     \item Integrate dependent types into OO classes/typeclasses,
       theories for generalizing proofs
+    \item A programming language embodying these ideas would be
+      \emph{immensely} powerful
     \item Many open questions/opportunities
   \end{itemize}
 \end{frame}
