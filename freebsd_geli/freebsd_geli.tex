@@ -1,0 +1,351 @@
+\documentclass{beamer}
+
+\title{GELI Support for UEFI}
+\author{Eric L. McCorkle}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage{}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Background}
+  \begin{itemize}
+  \item \texttt{geli} is a block-level disk encryption scheme for FreeBSD.
+  \item Support for booting in X86 BIOS mode from \texttt{geli}
+    volumes added by Allan Jude.
+  \item UEFI boot is very different from X86 BIOS.
+  \item GELI support for UEFI necessary to support modern hardware,
+    UEFI features (secure boot, UEFI variables, etc.)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{UEFI Boot Process}
+  \begin{itemize}
+  \item UEFI specification provides a number of APIs for device I/O,
+    memory allocation, driver registration, etc.
+  \item \emph{No} direct access to devices, control over addresses, etc.
+  \item Firmware looks for EFI System Partition (ESP), loads boot
+    application from standard location
+  \item UEFI spec calls for minimum 200Mib ESP, can be larger
+  \item FreeBSD UEFI boot process has two steps
+  \item \textt{boot1} is a UEFI application installed to ESP, looks
+    for boot partition, loads \texttt{loader.efi}
+  \item \texttt{loader.efi} presents the standard FreeBSD boot shell
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{UEFI Benefits and Challenges}
+  \begin{itemize}
+  \item Benefit: (mostly) free from space constraints, unlike X86 BIOS
+  \item Challenge: level of abstraction precludes safely passing
+    arbitrary memory from \texttt{boot1} to \texttt{loader.efi}
+  \item Challenge: harder to properly implement GELI driver
+  \item Challenge: split code base between \texttt{boot1} and
+    \texttt{loader.efi}
+  \item Benefit: a lot more tools to work with
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Issue: Key Transmission}
+  \begin{itemize}
+  \item User should only input password once
+  \item Na\"{i}ve implementation would require \emph{three} separate times
+  \item Need to transmit keys from \texttt{boot1} to
+    \texttt{loader.efi}, then to kernel
+  \item X86 BIOS pushed password onto \texttt{loader}'s stack, then as
+    an environment variable for the kernel
+  \item UEFI has stronger separation between stages
+  \item Want to support multiple passwords
+  \item Hashed passwords better (only incurs one hashing delay)
+  \item Ideally, provide straightforward migration to hardware key
+    storage mechanisms
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Issue: Split Codebase}
+  \begin{itemize}
+  \item \texttt{loader.efi} uses \texttt{libstand} API with UEFI backend
+  \item \texttt{boot1} used completely separate codebase with its own interface
+  \item Codebases were almost completely independent, significant duplication
+  \item \texttt{boot1} codebase tended towards minimality, difficult
+    to maintain and improve
+  \item Any change would require two separate implementations with
+    different underlying designs
+  \item This code duplication hampered both current as well as planned
+    future work
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Issue: GELI Driver Architecture}
+  \begin{itemize}
+  \item GELI is designed around GEOM, a multi-layered device interface
+  \item Can support arbitrarily-complex schemes (GPT/GELIs inside
+    GELIs, and so on)
+  \item Boot loader support is more limited
+  \item \texttt{boot1} would require complete overhaul to support
+    GELI-like structures
+  \item \texttt{loader.efi} has ability to support ``one-layer''
+    schemes (GELIs on partitions)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Timeline of Work}
+  \begin{itemize}
+  \item Attempt to refactor \texttt{boot1}
+  \item First attempt at unifying \texttt{boot1} and
+    \texttt{loader.efi} codebases (EFIzation)
+  \item First working GELI driver!
+  \item Time in code review, use on real hardware
+  \item ZFS boot environment issues identified, non-trivial changes to HEAD
+  \item Design revision, simplification, establishment of new branches
+  \item Key intake buffers go into kernel
+  \item Full-disk root-on-ZFS under GELI working on real hardware
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{First Refactor of \texttt{boot1}}
+  \begin{itemize}
+  \item Purpose was to ``rough out'' a PoC
+  \item Introduced a ``providers'' API to compliment boot modules
+  \item Created even more code duplication, highlighted need to unify codebases
+  \item Abandoned in favor of unification
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{EFIzation Effort}
+  Observation: UEFI provides an API with the same functionality as
+  \texttt{libstand}; use it instead!
+  \begin{itemize}
+  \item First effort to unify \texttt{boot1} and \texttt{loader.efi}
+  \item \texttt{boot1} and \texttt{loader.efi} would use
+    \texttt{EFI\_SIMPLE\_FILE\_SYSTEM} interface
+  \item Produced ``shim'' drivers: UEFI-to-\texttt{libstand},
+    \texttt{libstand}-to-UEFI
+  \item \texttt{libstand} drivers sat under
+    \texttt{EFI\_SIMPLE\_FILE\_SYSTEM} interface
+  \item \texttt{boot1} directly utilized
+    \texttt{EFI\_SIMPLE\_FILE\_SYSTEM} to find and load \texttt{loader.efi}
+  \item \texttt{loader.efi} continued to use \texttt{libstand}
+    interface, which talked through the other shim to UEFI API
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{UEFI Driver Primer}
+  \begin{itemize}
+  \item \texttt{EFI\_DRIVER\_BINDING} API allows registration of new drivers
+  \item Drivers have probe/attach functions for \texttt{EFI\_HANDLE}s
+  \item Can attach various interfaces to an \texttt{EFI\_HANDLE}
+  \item Can also create new \texttt{EFI\_HANDLE}s to represent virtual devices
+  \item New devices will be automatically probed by all registered drivers
+  \item UEFI spec guarantees GPT/MSDOSFS drivers
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{UEFI Drivers}
+  \begin{itemize}
+  \item GELI was implemented directly as a UEFI driver
+  \item GELI used \texttt{EFI\_DRIVER\_BINDING} API to register itself
+    as a driver, created new device handles for GELI volumes it detects
+  \item Benefit: this carries over across the
+    \texttt{boot1}/\texttt{loader.efi} boundary
+  \item \texttt{efipart} \emph{mostly} converted to a UEFI driver
+  \item Issues with \texttt{bcache} prevented full conversion
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Kernel Key Intake Buffer (\texttt{keybuf})}
+  \begin{itemize}
+  \item Provide a better way of getting keys into the kernel
+  \item Uses kernel metadata functionality to deliver (by default) up
+    to 64 keys, each up to 4096 bits long
+  \item Keys have a type code indicating their format
+  \item Picked up by \texttt{crypto}, then subsequently available to
+    other drivers for initialization
+  \item GELI passes in hashed passwords
+  \item Designed to be extended to work with hardware crypto
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Managing Keys in the Loader}
+  \begin{itemize}
+  \item UEFI driver interface solves one half of the problem raised by
+    the \texttt{boot1}/\texttt{loader.efi} gap
+  \item \texttt{EFI\_HANDLE}s registered in \texttt{boot1} are available
+    in \texttt{loader.efi}
+  \item This provides \emph{access}
+  \item Still need \emph{keys} to pass into the kernel
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{UEFI KMS Interface}
+  \begin{itemize}
+  \item UEFI defines a key management system (KMS) interface
+  \item Implemented a simple in-memory key database as a driver which
+    provides this interface.
+  \item GELI driver attempts to locate a KMS during initialization
+  \item GELI stores/retrieves keys from its KMS
+  \item Kernel metadata step also locates the KMS, transfers all keys
+    into the kernel via the \texttt{keybuf} interface
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Boot Crypto Framework (\texttt{boot\_crypto})}
+  \begin{itemize}
+  \item Inherited code from X86 BIOS implementation, but created a
+    separate codebase
+  \item X86 BIOS is space-constrained and only supports AES; UEFI is
+    not space-constrained
+  \item \texttt{boot\_crypto} is designed around a generic algorithm
+    interface with pluggable backends
+  \item Designed to anticipate overhaul of \texttt{crypto} framework
+  \item Also designed to support hardware crypto device implementations
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{If/When Trustworthy Hardware KMS/Crypto Exists\ldots}
+  Thinking ahead to a time when there is a trustworthy hardware KMS
+  implementation was a consideration in this design
+  \begin{itemize}
+  \item In-memory KMS detection aborts if it detects another KMS
+    device (this also deals with \texttt{boot1} and
+    \texttt{loader.efi} both having to attempt to register the
+    in-memory KMS device)
+  \item GELI should ``just work'', as it talks through the KMS and
+    \texttt{boot\_crypto} interfaces
+  \item \texttt{boot\_crypto} would need to add support
+  \item ``Keys'' would likely consist of ID numbers for keys stored in
+    KMS
+  \item \texttt{keybuf} interface could easily add another key type for key IDs
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Benefits of EFIzed Approach}
+  \begin{itemize}
+  \item \texttt{boot1} reduced to a very minimal program, uses same
+    codebase as \texttt{loader.efi}
+  \item Seamless integration with firmware-provided drivers
+  \item Dropped MSDOSFS driver
+  \item Provided framework for hot-plugging support (\texttt{bcache}
+    got in the way of full implementation)
+  \item Laid groundwork for exporting driver code to others
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Drawbacks of EFIzed Approach}
+  \begin{itemize}
+  \item UEFI does a bad job at supporting non-Microsoft systems and
+    interfaces
+  \item \texttt{EFI\_SIMPLE\_FILE\_SYSTEM} interface is designed
+    around MSDOSFS, sits uncomfortably in a VFS interface
+  \item Difficult to present the same information in boot shell as in
+    current \texttt{loader}
+  \item ZFS boot environments lost when talking over UEFI interfaces
+  \end{itemize}
+  Personal takeaway: started with moderately positive views on UEFI,
+  ended with moderately negative views.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Simplified Unification}
+
+  Eventually, code changes in HEAD broke the patches in non-trivial
+  ways, and the drawbacks of EFIzed approach were becoming clear.
+  \begin{itemize}
+  \item Moved out UEFI-to-\texttt{libstand} shim to an independent
+    review (still up for review)
+  \item Dropped \texttt{libstand}-to-UEFI shim altogether
+  \item Refactored \texttt{boot1} to use \texttt{libstand}
+  \item Recovered simplicity, information at boot shell, ZFS boot environments
+  \item Casualty: progress towards hot-pluggable devices at boot time
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Refurbishing Efforts}
+  \begin{itemize}
+  \item \texttt{efipart} had moved away from a static-numbered,
+    array-based storage scheme for device handles (right move)
+  \item \texttt{efipart} had also split up device handles by drive
+    type (also right move)
+  \item Found an integer overflow bug in
+    \texttt{efipart\_realstrategy} when attempting to read past the
+    end of a device (caused crash)
+  \item \texttt{efipart} was manually parsing partition tables and
+    using base device handles
+  \item This didn't work at all with GELI, so had to revert to direct
+    access through partition device handles
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Kernel gets \texttt{keybuf} Interface}
+  \begin{itemize}
+  \item \texttt{keybuf} patch went into kernel first
+  \item X86 BIOS GELI support started using \texttt{keybuf}
+  \item Legacy environment variable method still supported, eventually
+    to be phased out
+  \item \emph{Definitely} the right move to put \texttt{keybuf} in first
+  \item Anyone using a recent kernel can use UEFI GELI without a
+    kernel update
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Testing on QEMU and Real Hardware}
+  \begin{itemize}
+  \item QEMU testing setup had a large number of GELI disks, including
+    encrypted/unencrypted UFS, ZFS, also an X86 BIOS setup
+  \item Tested all combination on QEMU
+  \item I had also been using a root-on-ZFS laptop with its
+    L2ARC/Intent log stored on GELI volumes since the EFIzed version
+  \item Finally, converted a laptop over to a full GELI root-on-ZFS setup
+  \item Works perfectly (except I forgot the \texttt{-R} when taking
+    the ZFS snapshots\ldots)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Plans for GRUB/Coreboot}
+  \begin{itemize}
+  \item GRUB is (reportedly) the best way to achieve a Coreboot setup
+  \item Coreboot is arguably a better option (where it's supported)
+  \item GRUB already supports GELI, but needs to be updated to use the
+    \texttt{keybuf} interface
+  \item Initial conversations with GRUB developers indicates this
+    shouldn't be hard
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{My Long-Term Plans}
+
+  My overall agenda can be described as ``OS-level tamper-resilience''
+  \begin{itemize}
+  \item Full-disk encryption (GELI)
+  \item Trust framework and kernel/module signing
+  \item Active use of coreboot/setup guides
+  \item Secure suspend/resume
+  \item Other uses of trust framework
+  \end{itemize}
+\end{frame}
+
+\end{document}
