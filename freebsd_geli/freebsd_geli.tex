@@ -9,6 +9,19 @@
   \titlepage{}
 \end{frame}
 
+\section{Disclaimer}
+
+\begin{frame}
+  \frametitle{Disclaimer}
+
+  The content of this presentation does not constitute a statement on
+  behalf of or represent the position of any company or organization.
+  The work described herein was not carried out on behalf of any
+  company or organization, including any employer.
+\end{frame}
+
+\section{Background}
+
 \begin{frame}
   \frametitle{Background}
   \begin{itemize}
@@ -31,10 +44,17 @@
     application from standard location
   \item UEFI spec calls for minimum 200Mib ESP, can be larger
   \item FreeBSD UEFI boot process has two steps
-  \item \textt{boot1} is a UEFI application installed to ESP, looks
+  \item \texttt{boot1} is a UEFI application installed to ESP, looks
     for boot partition, loads \texttt{loader.efi}
   \item \texttt{loader.efi} presents the standard FreeBSD boot shell
   \end{itemize}
+\end{frame}
+
+\section{Core Issues}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
 \end{frame}
 
 \begin{frame}
@@ -96,6 +116,13 @@
   \end{itemize}
 \end{frame}
 
+\section{Project History}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
 \begin{frame}
   \frametitle{Timeline of Work}
   \begin{itemize}
@@ -111,6 +138,13 @@
   \end{itemize}
 \end{frame}
 
+\subsection{Initial Work}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
 \begin{frame}
   \frametitle{First Refactor of \texttt{boot1}}
   \begin{itemize}
@@ -118,6 +152,25 @@
   \item Introduced a ``providers'' API to compliment boot modules
   \item Created even more code duplication, highlighted need to unify codebases
   \item Abandoned in favor of unification
+  \end{itemize}
+\end{frame}
+
+\subsection{EFIzation}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
+\begin{frame}
+  \frametitle{UEFI Driver Primer}
+  \begin{itemize}
+  \item \texttt{EFI\_DRIVER\_BINDING} API allows registration of new drivers
+  \item Drivers have probe/attach functions for \texttt{EFI\_HANDLE}s
+  \item Can attach various interfaces to an \texttt{EFI\_HANDLE}
+  \item Can also create new \texttt{EFI\_HANDLE}s to represent virtual devices
+  \item New devices will be automatically probed by all registered drivers
+  \item UEFI spec guarantees GPT/MSDOSFS drivers
   \end{itemize}
 \end{frame}
 
@@ -141,18 +194,6 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{UEFI Driver Primer}
-  \begin{itemize}
-  \item \texttt{EFI\_DRIVER\_BINDING} API allows registration of new drivers
-  \item Drivers have probe/attach functions for \texttt{EFI\_HANDLE}s
-  \item Can attach various interfaces to an \texttt{EFI\_HANDLE}
-  \item Can also create new \texttt{EFI\_HANDLE}s to represent virtual devices
-  \item New devices will be automatically probed by all registered drivers
-  \item UEFI spec guarantees GPT/MSDOSFS drivers
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
   \frametitle{UEFI Drivers}
   \begin{itemize}
   \item GELI was implemented directly as a UEFI driver
@@ -165,19 +206,13 @@
   \end{itemize}
 \end{frame}
 
+\subsection{Keys and Crypto}
+
 \begin{frame}
-  \frametitle{Kernel Key Intake Buffer (\texttt{keybuf})}
-  \begin{itemize}
-  \item Provide a better way of getting keys into the kernel
-  \item Uses kernel metadata functionality to deliver (by default) up
-    to 64 keys, each up to 4096 bits long
-  \item Keys have a type code indicating their format
-  \item Picked up by \texttt{crypto}, then subsequently available to
-    other drivers for initialization
-  \item GELI passes in hashed passwords
-  \item Designed to be extended to work with hardware crypto
-  \end{itemize}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
 \end{frame}
+
 
 \begin{frame}
   \frametitle{Managing Keys in the Loader}
@@ -201,6 +236,20 @@
   \item GELI stores/retrieves keys from its KMS
   \item Kernel metadata step also locates the KMS, transfers all keys
     into the kernel via the \texttt{keybuf} interface
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Kernel Key Intake Buffer (\texttt{keybuf})}
+  \begin{itemize}
+  \item Provide a better way of getting keys into the kernel
+  \item Uses kernel metadata functionality to deliver (by default) up
+    to 64 keys, each up to 4096 bits long
+  \item Keys have a type code indicating their format
+  \item Picked up by \texttt{crypto}, then subsequently available to
+    other drivers for initialization
+  \item GELI passes in hashed passwords
+  \item Designed to be extended to work with hardware crypto
   \end{itemize}
 \end{frame}
 
@@ -234,6 +283,13 @@
     KMS
   \item \texttt{keybuf} interface could easily add another key type for key IDs
   \end{itemize}
+\end{frame}
+
+\subsection{Second Unification}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
 \end{frame}
 
 \begin{frame}
@@ -270,7 +326,7 @@
   Eventually, code changes in HEAD broke the patches in non-trivial
   ways, and the drawbacks of EFIzed approach were becoming clear.
   \begin{itemize}
-  \item Moved out UEFI-to-\texttt{libstand} shim to an independent
+  \item Moved UEFI-to-\texttt{libstand} shim out to an independent
     review (still up for review)
   \item Dropped \texttt{libstand}-to-UEFI shim altogether
   \item Refactored \texttt{boot1} to use \texttt{libstand}
@@ -296,6 +352,13 @@
   \end{itemize}
 \end{frame}
 
+\subsection{Testing and Review}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
 \begin{frame}
   \frametitle{Kernel gets \texttt{keybuf} Interface}
   \begin{itemize}
@@ -314,13 +377,20 @@
   \begin{itemize}
   \item QEMU testing setup had a large number of GELI disks, including
     encrypted/unencrypted UFS, ZFS, also an X86 BIOS setup
-  \item Tested all combination on QEMU
+  \item Tested all combinations on QEMU
   \item I had also been using a root-on-ZFS laptop with its
     L2ARC/Intent log stored on GELI volumes since the EFIzed version
   \item Finally, converted a laptop over to a full GELI root-on-ZFS setup
   \item Works perfectly (except I forgot the \texttt{-R} when taking
     the ZFS snapshots\ldots)
   \end{itemize}
+\end{frame}
+
+\section{Future Plans}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
 \end{frame}
 
 \begin{frame}
