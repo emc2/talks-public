@@ -1,0 +1,461 @@
+\documentclass{beamer}
+
+\title{Design of a Public-Key Trust System for FreeBSD}
+\author{Eric L. McCorkle}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage{}
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}
+  \frametitle{Motivating Example}
+  Consider a proposal for signing the kernel and modules:
+  \begin{itemize}
+  \item Extend Executable Linkable Format (ELF) to carry public-key
+    signatures
+  \item Sign kernel and modules with a private key for each build
+  \item Kernel and boot loader carry the verification (public) key
+  \item Loader checks kernel/module signatures before booting
+  \item Kernel checks module signatures before allowing them to be loaded
+  \item UEFI and GRUB both have equivalent facilities
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Cryptography as Trust}
+
+  Signed kernels and modules are an example of \emph{cryptography as
+    trust}.
+  \begin{itemize}
+  \item Cryptography is most often viewed as a \emph{confidentiality}
+    mechanism
+  \item However, it can also fulfill other purposes, such as
+    \emph{authorization}
+  \item In FreeBSD (and many other systems) the kernel
+    enforces authorization rules
+  \item Relies on memory protection, internal tables, user IDs, etc to
+    restrict \emph{who may access/modify}
+  \item Signed kernel modules allow authorization to restrict the
+    \emph{content} of the modules/kernel
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Public-Key Cryptography in System Context}
+
+  Public-key cryptography can extend and/or strengthen many security
+  features of operating systems:
+  \begin{itemize}
+  \item Signed kernels, modules, executables, libraries
+  \item Distribution and delegation in a capabilities-based access
+    control system (capsicum)
+  \item Strong (cryptographic) data access controls
+  \item ``Traditional'' public-key functions (session key negotiation,
+    protocols)
+  \item System-level trust management
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Trust Management}
+
+  Trust management is vital in a public-key system.
+  \begin{itemize}
+  \item Some public key (or set of them) serves as a \emph{root of trust}
+  \item Trust can be extended to additional keys through signatures
+  \item Chains of trust can be formed by signing each successive key
+    with the previous key
+  \item Public-Key Infrastructure (PKI) systems allow for a tree-like
+    structure
+  \item Other systems (PGP) use a web-of-trust (general graph)
+  \end{itemize}
+\end{frame}
+
+\section{Design Overview}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Trust System Design for FreeBSD}
+  \begin{itemize}
+  \item \emph{Runtime Trust Database}: In-kernel API for managing
+    root/intermediate keys
+  \item \texttt{devfs}-based interface for adding/revoking
+    intermediate keys from userland
+  \item \emph{Trust base configuration}: Configurations for building
+    in root keys, loading intermediate keys at boot.
+  \item Signed ELF binary format extension, conventions for signing
+    vital config files
+  \item NetBSD VeriExec integration
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Kernel API}
+  \begin{itemize}
+  \item Root certificates are established at boot, cannot be changed
+    during runtime (without hardware intervention)
+  \item Database tracks trust relationships, forms a forest with root
+    keys as roots
+  \item Intermediate certificates can be added, providing they are
+    signed by an existing root or intermediate certificate
+  \item All keys have a revocation list (initially empty), can be set
+    for any key
+  \item Any intermediate certificates in their signers' revocation
+    lists are removed, along with their descendents
+  \item Can check a signature against the database
+  \item Can enumerate database
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{\texttt{devfs} Interface}
+  \begin{itemize}
+  \item Present device nodes under \texttt{/dev/trust/}
+  \item Control interface at \texttt{/dev/trust/trustctl}:
+    \begin{itemize}
+    \item Write an X.509 certificate signed by a trusted certificate
+      to install as an intermediate certificate (check revocation
+      lists)
+    \item Write an X.509 revocation list signed by a trusted
+      certificate to install it as the signer's revocation list (and
+      do revocations)
+    \item Use binary DER encoding (easy/safe to parse) for input
+    \end{itemize}
+  \item Enumeration interfaces at \texttt{/dev/trust/certs},
+    \texttt{/dev/trust/rootcerts}:
+    \begin{itemize}
+    \item \texttt{/dev/trust/certs} reads back all certificates
+    \item \texttt{/dev/trust/rootcerts} reads back just roots
+    \item Read back certificates in PEM encoding, allows nodes to be
+      used as CAcert configuration for many applications
+    \end{itemize}
+  \item Could also render entire forest as directory structure
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Obtaining Root Keys}
+  There are several options for obtaining root keys at startup:
+  \begin{itemize}
+  \item Build directly into loader/kernel
+    \begin{itemize}
+    \item Advantage: Secure, better cipher suite
+    \item Disadvantage: Inflexible, difficult to recover from mishaps,
+      bad for standard images
+    \end{itemize}
+  \item Obtain from secure boot infrastructure or hardware
+    \begin{itemize}
+    \item Advantage: Integration with hardware/secure boot, flexible
+    \item Disadvantage: Often weak crypto suites (RSA 2048 is as good
+      as it gets)
+    \end{itemize}
+  \item Pass from loader to kernel via \texttt{keybuf}
+    \begin{itemize}
+    \item Advantage: Flexible, full cipher suite
+    \item Disadvantage: Less secure than compiling in
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Trust Base Configuration}
+  \begin{itemize}
+  \item Establishes trust configuration for builds and system startup
+  \item Store trust root certs at \texttt{/etc/trust/root/certs} (keys
+    at \texttt{/etc/trust/root/keys} if we have them)
+  \item Intermediate trust certs at \texttt{/etc/trust/certs} are
+    loaded by \texttt{rc} at boot
+  \item Trust root keys converted to C source, compiled into a static library
+  \item Ultimately compiled into loader and possibly kernel
+  \item Kernels may be signed with an ephemeral intermediate key,
+    stored at \texttt{/boot/kernel/cert.pem}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example Trust Configurations}
+  \begin{itemize}
+  \item Preferred configuration is one locally-generated trust root
+    key
+  \item Third-party vendor certs don't have a corresponding signing key
+  \item In the preferred configuration, all vendor keys are signed by
+    the local trust root key
+  \item Standard distributions can be signed with FreeBSD foundation's
+    vendor key
+  \item Likely will want to have installer generate the local key,
+    then inject it into the loader, then sign FreeBSD's vendor cert
+  \item Alternative config for high security networks has no local
+    keys, only the network's vendor cert, builds produced and signed
+    on a central machine
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Formats and Tooling}
+  \begin{itemize}
+  \item OpenSSL is part of FreeBSD base system
+  \item X509 certificates used by many applications, sensible format
+  \item DER binary encoding is best for input format to device nodes
+    \begin{itemize}
+    \item Easy to parse
+    \item Disinguished encoding allows byte-to-byte comparisons
+    \item Can be generated by \texttt{openssl} command-line tool
+    \end{itemize}
+  \item PEM encoding is preferable for outputting trusted keys (used
+    by many applications)
+  \item DER for input, PEM for output
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Signed Executables}
+  \begin{itemize}
+  \item ELF file format based on sections, already has conventions for
+    extra metadata (DWARF, \texttt{.comment}, \texttt{.note}, etc)
+  \item Cryptographic Message Syntax (CMS) supported by OpenSSL/PKI,
+    allows for detached signatures
+  \item Signed executables have a \texttt{.sign} section, containing a
+    CMS detached signature
+  \item Signatures are computed with a same-sized, zeroed-out
+    \texttt{.sign} section
+  \item Signatures in this scheme can be added/verified/removed using
+    \texttt{objcopy} and \texttt{openssl}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{A Note on Alternatives}
+
+  Several altenative approaches exist:
+  \begin{itemize}
+  \item GRUB uses detached GPG signatures
+  \item Linux has a system call-based kernel keyring feature
+  \end{itemize}
+
+  Reasons for not going with the alternatives:
+  \begin{itemize}
+  \item Signed ELF binary scheme is compatible with existing
+    tools/installers; detached GPG signatures aren't
+  \item \texttt{devfs} control interface can be used by existing
+    applications w/o modification
+  \item PGP-compatible tools not in FreeBSD base system
+  \item Web-of-trust is arguably the wrong model for such a system
+  \item Revocation in PGP systems done by the key \emph{owner}, not
+    the signitories
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{NetBSD VeriExec Framework}
+
+  The NetBSD VeriExec framework also provides a file integrity
+  checking mechanism
+  \begin{itemize}
+  \item MAC registry specifies authentication codes for arbitrary files
+  \item MACs are checked upon loading files, \texttt{execve} calls, etc.
+  \item Advantage: out-of-band integrity checks (doesn't require
+    in-file signatures like signed ELF)
+  \item Cannot manage \emph{delegated} trust, less flexible than a
+    public-key mechanism
+  \item Basic integration: allow MAC registries to be loaded at any
+    point, if signed by a trusted key
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{UUID-Marked Executables}
+  \begin{itemize}
+  \item VeriExec associates MACs with a path; can be inflexible
+  \item Signed ELFs can be moved around freely (advantage of in-file
+    metadata)
+  \item Hybrid mechanism: add a UUID to each ELF, can be generated
+    with 128-bit hash (SHA-1, RipeMD-128)
+  \item Allow VeriExec to associate MACs to UUIDs as well as paths
+  \item Executables can be marked with UUIDs once, never need to be
+    modified to add additional signatures
+  \item UUID-marked executables can have other administrative uses
+  \end{itemize}
+\end{frame}
+
+\section{Post-Quantum Cryptography}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
+\begin{frame}
+  \frametitle{The Quantum Machines are Coming!}
+  \begin{itemize}
+  \item Decent estimate: quantum machines capable of attacking
+    existing public-key crypto likely to arrive some time between 5
+    and 50 years from now
+  \item Hidden-subgroup attack breaks RSA, elliptic-curve/classical
+    discrete logs (all common public-key crypto)
+  \item Grover iteration: quadratic-speed attack against
+    symmetric-key, MACs, hashes (halfs bit security)
+  \item Grover iteration is a theoretical attack (requires large
+    quantum memory, very long stability)
+  \item Short version: symmetric-key, hashes, MACs safe, public-key
+    exchange/signatures broken
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Post-Quantum Cryptography}
+  \begin{itemize}
+    \item \emph{Post-quantum} cryptography aims to develop
+      \emph{classical} cryptographic methods that are secure against
+      quantum attacks (distinct from quantum cryptography)
+    \item Viable post-quantum key exchange being deployed (SIDH)
+    \item Post-quantum signatures don't have as nice a picture
+    \item Hash-based signatures: reliable, very mature (date back to
+      Lamport) but have serious caveats
+    \item Other post-quantum signature schemes are still under active
+      research, too new, or extremely impractical ($>1$Mib signatures,
+      etc)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Hash-Based Signatures}
+  \begin{itemize}
+  \item XMSS: Stateful hash-based signatures
+    \begin{itemize}
+    \item Good for finite number of signatures
+    \item Signature size varies, but reasonable parameters give 1-4Kib
+    \item Non-standard interface: updates ``state'' on every signing
+      operation
+    \item Re-signing with old states destroys security properties
+    \item Adam Langley: ``Giant foot-cannon''
+    \end{itemize}
+  \item SPHINCS: Stateless (big) hash-based signatures
+    \begin{itemize}
+    \item Classic public-key signature interface, no state
+    \item Signature size is 40Kib
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Using Hash-Based Signatures in Trust}
+
+  The trust framework provides use cases where both schemes can be
+  used practically:
+  \begin{itemize}
+    \item Stateful signatures are ideal for batch-signing: create
+      key-pair, sign, destroy private key
+    \item Stateful signatures also good for non-persisted key used,
+      controlled by kernel, generated at boot and destroyed at
+      shutdown.
+    \item Could use stateful signatures to issue delegated
+      credentials valid only for system uptime
+    \item SPHINCS signatures good for signing big messages, or signing
+      relatively small numbers of messages
+    \item Ideal for VeriExec manifests (likely to be much larger than
+      40Kib)
+  \end{itemize}
+\end{frame}
+
+\section{Applications and Implementation}
+
+\begin{frame}
+  \frametitle{Table of Contents}
+  \tableofcontents[currentsection]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Applications}
+  \begin{itemize}
+  \item Signed kernel and modules
+  \item Trusted boot
+  \item Signed executables/configuration files
+  \item System-wide certificate configurations
+  \item Delegation of capabilities to remote systems
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Implementation Roadmap}
+  \begin{itemize}
+  \item Crypto library for kernel/loader (crypto overhaul is an open
+    topic)
+  \item In-kernel runtime trust database, \texttt{devfs} interface
+  \item Modify loader to check signatures
+  \item Add code to check kernel module signatures
+  \item Implement \texttt{signelf} (done)
+  \item Modify build system to produce static library containing root
+    keys from trust base config, sign executables
+  \item Modify \texttt{rc} to load intermediate certificates at boot
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Crypto Overhaul (brief)}
+  \begin{itemize}
+  \item Kernel crypto, OpenCrypto generally in need of overhaul (old,
+    poor organization)
+  \item No public-key, no PKI parsing
+  \item Loader only has a stop-gap measure for implementing GELI
+  \item Popular options:
+    \begin{itemize}
+    \item Import OpenSSL (tried once, failed)
+    \item LibreSSL (developed by OpenBSD)
+    \item BearSSL (new, still under development)
+    \item Earlier versions of this proposal included minimal PKI library
+    \end{itemize}
+  \item Any solution will need to add new ciphers (use FreeBSD OID
+    space to create new OIDs, upstream to crypto)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Kernel Key Database, \texttt{devfs}}
+  \begin{itemize}
+  \item Basic forest data structure with public keys/revocation lists
+  \item Hardware interface: likely have abstraction layer for storing
+    individual keys
+  \item Maintain forest structure in kernel
+  \item \texttt{devfs} interface ends up being a straightforward use
+    of kernel API
+  \item Kernel/Loader then has API for checking public-key signatures
+    (main goal)
+  \item Use this to check signatures on executables, files, etc.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{The \texttt{signelf} Utility}
+  \begin{itemize}
+  \item Batch signer, streamlined tool for signing large numbers of
+    ELF binaries
+  \item More convenient than using \texttt{objcopy}/\texttt{openssl}
+  \item Gets keys/certs from system trust configuration by default
+  \item Can generate an ephemeral key-pair for signing
+  \item Writes out verification key for ephemeral key-pair, destroys
+    signing key
+  \item Initial implementation using OpenSSL complete
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Build System, \texttt{rc} Modifications}
+  \begin{itemize}
+  \item Convert trust root certificates into C code early in build
+  \item Create static library (\texttt{librootkeys.a})
+  \item Loader and Kernel can then compile in keys
+  \item \texttt{rc.d} script to install intermediate
+    certificates/revocation lists via \texttt{devfs} interface
+  \end{itemize}
+\end{frame}
+
+\end{document}
